@@ -1,4 +1,0 @@
-﻿  ActiveWallpaper.cpp
-C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper.cpp(126,40): warning C4267: 'argument' : conversion de 'size_t' en 'int', perte possible de données
-MSVCRTD.lib(exe_main.obj) : error LNK2019: symbole externe non résolu main référencé dans la fonction "int __cdecl invoke_main(void)" (?invoke_main@@YAHXZ)
-C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\x64\Debug\ActiveWallpaper.exe : fatal error LNK1120: 1 externes non résolus
