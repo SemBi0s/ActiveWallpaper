@@ -4,177 +4,203 @@
 #include "framework.h"
 #include "ActiveWallpaper.h"
 
-#define MAX_LOADSTRING 100
+#include <dshow.h>
+#include <windows.h>
+#include <cstdlib>
+//#include <string.h>
+#include <tchar.h>
 
-// Variables globales :
-HINSTANCE hInst;                                // instance actuelle
-WCHAR szTitle[MAX_LOADSTRING];                  // Texte de la barre de titre
-WCHAR szWindowClass[MAX_LOADSTRING];            // nom de la classe de fenêtre principale
+// Global variables
 
-// Déclarations anticipées des fonctions incluses dans ce module de code :
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+// The main window class name.
+static TCHAR szWindowClass[] = _T("Wallpaper");
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+// The string that appears in the application's title bar.
+static TCHAR szTitle[] = _T("Wallpaper Displayer");
+
+HINSTANCE hInst;
+
+// Forward declarations of functions included in this code module:
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+int CALLBACK WinMain(
+    _In_ HINSTANCE hInstance,
+    _In_opt_ HINSTANCE hPrevInstance,
+    _In_ LPSTR     lpCmdLine,
+    _In_ int       nCmdShow
+)
 {
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
-
-    // TODO: Placez le code ici.
-
-    // Initialise les chaînes globales
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_ACTIVEWALLPAPER, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
-
-    // Effectue l'initialisation de l'application :
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
-
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ACTIVEWALLPAPER));
-
-    MSG msg;
-
-    // Boucle de messages principale :
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
-
-    return (int) msg.wParam;
-}
-
-
-
-//
-//  FONCTION : MyRegisterClass()
-//
-//  OBJECTIF : Inscrit la classe de fenêtre.
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-    WNDCLASSEXW wcex;
+    WNDCLASSEX wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = WndProc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
+    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = NULL;
+    wcex.lpszClassName = szWindowClass;
+    wcex.hIconSm = LoadIcon(wcex.hInstance, IDI_APPLICATION);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ACTIVEWALLPAPER));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_ACTIVEWALLPAPER);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    if (!RegisterClassEx(&wcex))
+    {
+        MessageBox(NULL,
+            _T("Call to RegisterClassEx failed!"),
+            _T("Windows Desktop Guided Tour"),
+            NULL);
 
-    return RegisterClassExW(&wcex);
+        return 1;
+    }
+
+    // Store instance handle in our global variable
+    hInst = hInstance;
+
+    // TODO: CODE HERE
+
+    IGraphBuilder* pGraph = NULL;
+    IMediaControl* pControl = NULL;
+    IMediaEvent* pEvent = NULL;
+
+    // Initialize the COM library.
+    HRESULT hr = CoInitialize(NULL);
+    if (FAILED(hr))
+    {
+        printf("ERROR - Could not initialize COM library");
+
+    }
+
+    // Create the filter graph manager and query for interfaces.
+    hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER,
+        IID_IGraphBuilder, (void**)&pGraph);
+    if (FAILED(hr))
+    {
+        printf("ERROR - Could not create the Filter Graph Manager.");
+
+    }
+
+    hr = pGraph->QueryInterface(IID_IMediaControl, (void**)&pControl);
+    hr = pGraph->QueryInterface(IID_IMediaEvent, (void**)&pEvent);
+
+    // Build the graph. IMPORTANT: Change this string to a file on your system.
+    hr = pGraph->RenderFile(L"C://Users/Olivier/Downloads/sample.avi", NULL);
+    if (SUCCEEDED(hr))
+    {
+        // Run the graph.
+        hr = pControl->Run();
+        if (SUCCEEDED(hr))
+        {
+            // Wait for completion.
+            long evCode;
+            pEvent->WaitForCompletion(INFINITE, &evCode);
+
+            // Note: Do not use INFINITE in a real application, because it
+            // can block indefinitely.
+        }
+    }
+
+    pControl->Release();
+    pEvent->Release();
+    pGraph->Release();
+    CoUninitialize();
+
+
+
+
+   
+
+
+
+    int x = GetSystemMetrics(SM_CXSCREEN);
+    int y = GetSystemMetrics(SM_CYSCREEN);
+    // The parameters to CreateWindow explained:
+    // szWindowClass: the name of the application
+    // szTitle: the text that appears in the title bar
+    // WS_OVERLAPPEDWINDOW: the type of window to create
+    // CW_USEDEFAULT, CW_USEDEFAULT: initial position (x, y)
+    // 500, 100: initial size (width, length)
+    // NULL: the parent of this window
+    // NULL: this application does not have a menu bar
+    // hInstance: the first parameter from WinMain
+    // NULL: not used in this application
+    HWND hWnd = CreateWindow(
+        szWindowClass,
+        szTitle,
+        WS_POPUPWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        x, y,
+        NULL,
+        NULL,
+        hInstance,
+        NULL
+    );
+
+    if (!hWnd)
+    {
+        MessageBox(NULL,
+            _T("Call to CreateWindow failed!"),
+            _T("Windows Desktop Guided Tour"),
+            NULL);
+
+        return 1;
+    }
+
+    // The parameters to ShowWindow explained:
+    // hWnd: the value returned from CreateWindow
+    // nCmdShow: the fourth parameter from WinMain
+    ShowWindow(hWnd,
+        nCmdShow);
+    UpdateWindow(hWnd);
+
+    // Main message loop:
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    return (int)msg.wParam;
 }
 
+//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
-//   FONCTION : InitInstance(HINSTANCE, int)
+//  PURPOSE:  Processes messages for the main window.
 //
-//   OBJECTIF : enregistre le handle d'instance et crée une fenêtre principale
-//
-//   COMMENTAIRES :
-//
-//        Dans cette fonction, nous enregistrons le handle de l'instance dans une variable globale, puis
-//        nous créons et affichons la fenêtre principale du programme.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-   hInst = hInstance; // Stocke le handle d'instance dans la variable globale
-
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-
-   return TRUE;
-}
-
-//
-//  FONCTION : WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  OBJECTIF : Traite les messages pour la fenêtre principale.
-//
-//  WM_COMMAND  - traite le menu de l'application
-//  WM_PAINT    - Dessine la fenêtre principale
-//  WM_DESTROY  - génère un message d'arrêt et retourne
-//
-//
+//  WM_PAINT    - Paint the main window
+//  WM_DESTROY  - post a quit message and return
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    PAINTSTRUCT ps;
+    HDC hdc;
+    TCHAR greeting[] = _T("Wallpaper");
+
     switch (message)
     {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Analyse les sélections de menu :
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Ajoutez ici le code de dessin qui utilise hdc...
-            EndPaint(hWnd, &ps);
-        }
+        hdc = BeginPaint(hWnd, &ps);
+
+        // Here your application is laid out.
+        // For this introduction, we just print out "Hello, Windows desktop!"
+        // in the top left corner.
+        TextOut(hdc,
+            5, 5,
+            greeting, _tcslen(greeting));
+        // End application-specific layout section.
+
+        EndPaint(hWnd, &ps);
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
+        break;
     }
+
     return 0;
 }
 
-// Gestionnaire de messages pour la boîte de dialogue À propos de.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
-}
