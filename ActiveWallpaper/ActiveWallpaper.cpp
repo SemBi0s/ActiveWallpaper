@@ -3,7 +3,7 @@
 
 #include "framework.h"
 #include "ActiveWallpaper.h"
-
+#include "player.h"
 
 
 #include <windows.h>
@@ -38,13 +38,8 @@ void OnPaint(HDC hdc)
 	
     myImage.GetFrameDimensionsList(*m_DimensionID, count);*/
 	
-	
-for (int i =0; i <= GetSystemMetrics(SM_CXSCREEN);i++)
-	{
-        for (int u = 0; u <= GetSystemMetrics(SM_CYSCREEN); u++)
-            graphics.DrawImage(&myImage, i, u);
+    graphics.DrawImage(&myImage, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
-	}
     
 	
 	

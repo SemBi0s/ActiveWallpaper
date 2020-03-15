@@ -1,2 +1,14 @@
-﻿  ActiveWallpaper.cpp
-  ActiveWallpaper.vcxproj -> C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\Debug\ActiveWallpaper.exe
+﻿  VideoPlayer.cpp
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFStartup@8 référencé dans la fonction "protected: long __thiscall CPlayer::Initialize(void)" (?Initialize@CPlayer@@IAEJXZ)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFShutdown@0 référencé dans la fonction "public: long __thiscall CPlayer::Shutdown(void)" (?Shutdown@CPlayer@@QAEJXZ)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFCreateMediaSession@8 référencé dans la fonction "protected: long __thiscall CPlayer::CreateSession(void)" (?CreateSession@CPlayer@@IAEJXZ)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFCreateSourceResolver@4 référencé dans la fonction "long __cdecl CreateMediaSource(wchar_t const *,struct IMFMediaSource * *)" (?CreateMediaSource@@YAJPB_WPAPAUIMFMediaSource@@@Z)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFCreateTopology@4 référencé dans la fonction "long __cdecl CreatePlaybackTopology(struct IMFMediaSource *,struct IMFPresentationDescriptor *,struct HWND__ *,struct IMFTopology * *)" (?CreatePlaybackTopology@@YAJPAUIMFMediaSource@@PAUIMFPresentationDescriptor@@PAUHWND__@@PAPAUIMFTopology@@@Z)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFCreateTopologyNode@8 référencé dans la fonction "long __cdecl AddOutputNode(struct IMFTopology *,struct IMFActivate *,unsigned long,struct IMFTopologyNode * *)" (?AddOutputNode@@YAJPAUIMFTopology@@PAUIMFActivate@@KPAPAUIMFTopologyNode@@@Z)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFGetService@16 référencé dans la fonction "protected: virtual long __thiscall CPlayer::OnTopologyStatus(struct IMFMediaEvent *)" (?OnTopologyStatus@CPlayer@@MAEJPAUIMFMediaEvent@@@Z)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFCreateAudioRendererActivate@4 référencé dans la fonction "long __cdecl CreateMediaSinkActivate(struct IMFStreamDescriptor *,struct HWND__ *,struct IMFActivate * *)" (?CreateMediaSinkActivate@@YAJPAUIMFStreamDescriptor@@PAUHWND__@@PAPAUIMFActivate@@@Z)
+VideoPlayer.obj : error LNK2019: symbole externe non résolu _MFCreateVideoRendererActivate@8 référencé dans la fonction "long __cdecl CreateMediaSinkActivate(struct IMFStreamDescriptor *,struct HWND__ *,struct IMFActivate * *)" (?CreateMediaSinkActivate@@YAJPAUIMFStreamDescriptor@@PAUHWND__@@PAPAUIMFActivate@@@Z)
+VideoPlayer.obj : error LNK2001: symbole externe non résolu _MF_EVENT_TOPOLOGY_STATUS
+VideoPlayer.obj : error LNK2001: symbole externe non résolu _MFMediaType_Audio
+VideoPlayer.obj : error LNK2001: symbole externe non résolu _MFMediaType_Video
+C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\Debug\ActiveWallpaper.exe : fatal error LNK1120: 12 externes non résolus
