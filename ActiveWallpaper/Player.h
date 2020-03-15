@@ -1,8 +1,11 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+
+
 #include <new>
 #include <windows.h>
+#include <windowsx.h>
 #include <shobjidl.h> 
 #include <shlwapi.h>
 #include <assert.h>

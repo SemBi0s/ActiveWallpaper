@@ -97,7 +97,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Strmiids.lib;gdiplus.lib;shlwapi.lib;mfplay.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mf.lib;mfplay.lib;msvcprtd.lib;msvcrtd.lib;shlwapi.lib;gdiplus.lib;Mfplat.lib;strmiids.lib;mfuuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -167,6 +167,9 @@
   <ItemGroup>
     <Image Include="ActiveWallpaper.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

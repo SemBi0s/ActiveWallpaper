@@ -1,18 +1,98 @@
 // ActiveWallpaper.cpp : Définit le point d'entrée de l'application.
 //
 
+#define WINVER _WIN32_WINNT_WIN10
 #include "framework.h"
 #include "ActiveWallpaper.h"
 #include "player.h"
 
 
+
+
 #include <windows.h>
+#include <mfplay.h>
+#include <mferror.h>
 #include <vector>
 #include <dshow.h>
 #include <cstdlib>
 #include <tchar.h>
 #include <Gdiplus.h>
+#include <shobjidl.h>
+#include <strsafe.h>
+
+
+
+BOOL    InitializeWindow(HWND* pHwnd);
+HRESULT PlayMediaFile(HWND hwnd, const WCHAR* sURL);
+
+void    ShowErrorMessage(PCWSTR format, HRESULT hr);
+
+void    OnClose(HWND hwnd);
+void    OnPaint(HWND hwnd);
+
+
+
+
+void OnFileOpen(HWND hwnd);
+
+void OnMediaItemCreated(MFP_MEDIAITEM_CREATED_EVENT* pEvent);
+void OnMediaItemSet(MFP_MEDIAITEM_SET_EVENT* pEvent);
+
+
+
+
+#include <Shlwapi.h>
+
+
+
+class MediaPlayerCallback : public IMFPMediaPlayerCallback
+{
+    long m_cRef; // Reference count
+
+public:
+
+    MediaPlayerCallback() : m_cRef(1)
+    {
+    }
+
+    IFACEMETHODIMP QueryInterface(REFIID riid, void** ppv)
+    {
+        static const QITAB qit[] =
+        {
+            QITABENT(MediaPlayerCallback, IMFPMediaPlayerCallback),
+            { 0 },
+        };
+        return QISearch(this, qit, riid, ppv);
+    }
+
+    IFACEMETHODIMP_(ULONG) AddRef()
+    {
+        return InterlockedIncrement(&m_cRef);
+    }
+
+    IFACEMETHODIMP_(ULONG) Release()
+    {
+        ULONG count = InterlockedDecrement(&m_cRef);
+        if (count == 0)
+        {
+            delete this;
+            return 0;
+        }
+        return count;
+    }
+
+    // IMFPMediaPlayerCallback methods
+   IFACEMETHODIMP_(void) OnMediaPlayerEvent(MFP_EVENT_HEADER* pEventHeader);
+};
+
+
+
+
 // Global variables
+IMFPMediaPlayer* g_pPlayer = NULL;      // The MFPlay player object.
+MediaPlayerCallback* g_pPlayerCB = NULL;    // Application callback object.
+
+BOOL g_bHasVideo = FALSE;
 
 // The main window class name.
 static TCHAR szWindowClass[] = _T("Wallpaper");
@@ -27,30 +107,228 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 //fonctions here
 
-
-void OnPaint(HDC hdc)
+HRESULT PlayMediaFile(HWND hwnd, PCWSTR pszURL)
 {
+    HRESULT hr = S_OK;
+
+    // Create the MFPlayer object.
+    if (g_pPlayer == NULL)
+    {
+        g_pPlayerCB = new (std::nothrow) MediaPlayerCallback();
+
+        MessageBox(NULL,
+            _T("121"),
+            _T(""),
+            NULL);
+
+        if (g_pPlayerCB == NULL)
+        {
+            return E_OUTOFMEMORY;
+        }
+
+        hr = MFPCreateMediaPlayer(
+            NULL,
+            TRUE,          // Start playback automatically?
+            0,              // Flags
+            g_pPlayerCB,    // Callback pointer
+            hwnd,           // Video window
+            &g_pPlayer
+        );
+    }
+
+    // Create a new media item for this URL.
+
+    if (SUCCEEDED(hr))
+    {
+        hr = g_pPlayer->CreateMediaItemFromURL(pszURL, FALSE, 0, NULL);
+        MessageBox(NULL,_T("150"), _T(""), NULL);
+    }
+
+    // The CreateMediaItemFromURL method completes asynchronously.
+    // The application will receive an MFP_EVENT_TYPE_MEDIAITEM_CREATED
+    // event. See MediaPlayerCallback::OnMediaPlayerEvent().
+
+    return hr;
+}
+
+void OnFileOpen(HWND hwnd)
+{
+    IFileOpenDialog* pFileOpen = NULL;
+    IShellItem* pItem = NULL;
+    PWSTR pwszFilePath = NULL;
+
+    // Create the FileOpenDialog object.
+    HRESULT hr = CoCreateInstance(__uuidof(FileOpenDialog), NULL,
+        CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileOpen));
+    if (SUCCEEDED(hr))
+    {
+        hr = pFileOpen->SetTitle(L"Select a File to Play");
+        MessageBox(NULL,
+            _T("Call to Video 1!"),
+            _T(""),
+            NULL);
+    }
+
+    // Show the file-open dialog.
+    if (SUCCEEDED(hr))
+    {
+        hr = pFileOpen->Show(hwnd);
+    }
+
+    if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
+    {
+        // User canceled.
+        SafeRelease(&pFileOpen);
+        return;
+    }
+
+    // Get the file name from the dialog.
+    if (SUCCEEDED(hr))
+    {
+        hr = pFileOpen->GetResult(&pItem);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        hr = pItem->GetDisplayName(SIGDN_URL, &pwszFilePath);
+    }
+
+    // Open the media file.
+    if (SUCCEEDED(hr))
+    {
+        hr = PlayMediaFile(hwnd, pwszFilePath);
+        MessageBox(NULL,
+            _T("200"),
+            _T(""),
+            NULL);
+    }
+
+   /* if (FAILED(hr))
+    {
+        MessageBox(NULL,
+            _T("Call to Video failed!"),
+            _T(""),
+            NULL);
+    }*/
+
+    CoTaskMemFree(pwszFilePath);
+
+    SafeRelease(&pItem);
+    SafeRelease(&pFileOpen);
+}
+
+
+
+
+
+
+
+void OnPaint(HWND hwnd)
+{
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
 	Gdiplus::Graphics graphics(hdc);
 	Gdiplus::Pen      pen(Gdiplus::Color(255, 0, 0, 255));
     Gdiplus::Image myImage(L"C://Users/Olivier/Downloads/sample.gif");
-   /* UINT count = myImage.GetFrameDimensionsCount();
-    GUID** m_DimensionID= new GUID*[count];
-	
-    myImage.GetFrameDimensionsList(*m_DimensionID, count);*/
-	
-    graphics.DrawImage(&myImage, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
     
 	
-	
+   // graphics.DrawImage(&myImage, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
-/*	for (int i = 0; i < count; i++)
-	{
-    delete[] m_DimensionID[i];
-	}
-    delete[] m_DimensionID;
-   */
+    if (g_pPlayer && g_bHasVideo)
+    {
+        // Playback has started and there is video.
+        
+        // Do not draw the window background, because the video
+        // frame fills the entire client area.
+
+        g_pPlayer->UpdateVideo();
+    }
+    else
+    {
+        // There is no video stream, or playback has not started.
+        // Paint the entire client area.
+
+        FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 100));
+    }
+    
+    
+	
+	
+    EndPaint(hwnd, &ps);
+
 }
+void OnClose(HWND /*hwnd*/)
+{
+    SafeRelease(&g_pPlayer);
+    SafeRelease(&g_pPlayerCB);
+    PostQuitMessage(0);
+}
+
+
+
+
+
+
+void MediaPlayerCallback::OnMediaPlayerEvent(MFP_EVENT_HEADER* pEventHeader)
+{
+    if (FAILED(pEventHeader->hrEvent))
+    {
+        MessageBox(NULL,
+            _T("Call to cb failed!"),
+            _T("Windows Desktop Guided Tour"),
+            NULL);
+
+        return;
+    }
+
+    switch (pEventHeader->eEventType)
+    {
+    case MFP_EVENT_TYPE_MEDIAITEM_CREATED:
+        OnMediaItemCreated(MFP_GET_MEDIAITEM_CREATED_EVENT(pEventHeader));
+        break;
+
+    case MFP_EVENT_TYPE_MEDIAITEM_SET:
+        OnMediaItemSet(MFP_GET_MEDIAITEM_SET_EVENT(pEventHeader));
+        break;
+    }
+}
+
+
+
+
+void OnMediaItemCreated(MFP_MEDIAITEM_CREATED_EVENT* pEvent)
+{
+    // The media item was created successfully.
+
+    if (g_pPlayer)
+    {
+        BOOL    bHasVideo = FALSE;
+        BOOL    bIsSelected = FALSE;
+
+        // Check if the media item contains video.
+        HRESULT hr = pEvent->pMediaItem->HasVideo(&bHasVideo, &bIsSelected);
+        if (SUCCEEDED(hr))
+        {
+            g_bHasVideo = bHasVideo && bIsSelected;
+
+            // Set the media item on the player. This method completes
+            // asynchronously.
+            hr = g_pPlayer->SetMediaItem(pEvent->pMediaItem);
+        }
+
+        if (FAILED(hr))
+        {
+            MessageBox(NULL,
+                _T("Call to RegisterClassEx failed!"),
+                _T("Windows Desktop Guided Tour"),
+                NULL);
+
+        }
+    }
+}
+
+
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
@@ -64,6 +342,23 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
     }
     return true;
 }
+
+
+
+void OnMediaItemSet(MFP_MEDIAITEM_SET_EVENT* /*pEvent*/)
+{
+    HRESULT hr = g_pPlayer->Play();
+    if (FAILED(hr))
+    {
+        MessageBox(NULL,
+            _T("Call to RegisterClassEx failed!"),
+            _T("Windows Desktop Guided Tour"),
+            NULL);
+
+    }
+}
+
+
 
 HWND get_wallpaper_window()
 {
@@ -87,17 +382,14 @@ HWND get_wallpaper_window()
 
 
 
-int CALLBACK WinMain(
-    _In_ HINSTANCE hInstance,
+BOOL InitializeWindow(HWND* pHwnd, _In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPSTR     lpCmdLine,
-    _In_ int       nCmdShow
-)
+    _In_ int       nCmdShow)
 {
-    Gdiplus::GdiplusStartupInput gdiplusstartupinput;
-    ULONG_PTR gdiplusToken;
-    Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusstartupinput, nullptr);
-	
+    const wchar_t CLASS_NAME[] = L"MFPlay Window Class";
+    const wchar_t WINDOW_NAME[] = L"MFPlay Sample Application";
+
     WNDCLASSEX wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
@@ -123,66 +415,11 @@ int CALLBACK WinMain(
         return 1;
     }
 
-    // Store instance handle in our global variable
     hInst = hInstance;
-    /*
+
     // TODO: CODE HERE
+    
 
-    IGraphBuilder* pGraph = NULL;
-    IMediaControl* pControl = NULL;
-    IMediaEvent* pEvent = NULL;
-
-    // Initialize the COM library.
-    HRESULT hr = CoInitialize(NULL);
-    if (FAILED(hr))
-    {
-        printf("ERROR - Could not initialize COM library");
-
-    }
-
-    // Create the filter graph manager and query for interfaces.
-    hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER,
-        IID_IGraphBuilder, (void**)&pGraph);
-    if (FAILED(hr))
-    {
-        printf("ERROR - Could not create the Filter Graph Manager.");
-
-    }
-
-    hr = pGraph->QueryInterface(IID_IMediaControl, (void**)&pControl);
-    hr = pGraph->QueryInterface(IID_IMediaEvent, (void**)&pEvent);
-
-    // Build the graph. IMPORTANT: Change this string to a file on your system.
-    hr = pGraph->RenderFile(L"C://Users/Olivier/Downloads/sample.mkv", NULL);
-    if (SUCCEEDED(hr))
-    {
-        // Run the graph.
-        hr = pControl->Run();
-        if (SUCCEEDED(hr))
-        {
-            // Wait for completion.
-            long evCode;
-            pEvent->WaitForCompletion(INFINITE, &evCode);
-
-            // Note: Do not use INFINITE in a real application, because it
-            // can block indefinitely.
-        }
-    }
-
-    pControl->Release();
-    pEvent->Release();
-    pGraph->Release();
-    CoUninitialize();*/
-
-
-   
-
-
-
-
-
-
-	
 
     int x = GetSystemMetrics(SM_CXSCREEN);
     int y = GetSystemMetrics(SM_CYSCREEN);
@@ -198,8 +435,8 @@ int CALLBACK WinMain(
     // NULL: not used in this application
 
    // HWND hWnd = get_wallpaper_window();
-	
-	HWND hWnd = CreateWindow(
+
+    HWND hWnd = CreateWindow(
         szWindowClass,
         szTitle,
         WS_CHILD,
@@ -222,36 +459,77 @@ int CALLBACK WinMain(
     }
 
 
-    
-	//
 
-	
+    //
+    OnFileOpen(hWnd);
+
     // The parameters to ShowWindow explained:
     // hWnd: the value returned from CreateWindow
     // nCmdShow: the fourth parameter from WinMain
     ShowWindow(hWnd,
         nCmdShow);
     UpdateWindow(hWnd);
+   
 
-    // Main message loop:
-    MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0))
+    
+    return TRUE;
+}
+
+
+
+int CALLBACK WinMain(
+    _In_ HINSTANCE hInstance,
+    _In_opt_ HINSTANCE hPrevInstance,
+    _In_ LPSTR     lpCmdLine,
+    _In_ int       nCmdShow
+)
+{
+    Gdiplus::GdiplusStartupInput gdiplusstartupinput;
+    ULONG_PTR gdiplusToken;
+    Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusstartupinput, nullptr);
+	
+    HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+
+    HRESULT hr = CoInitializeEx(NULL,
+        COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+    if (FAILED(hr))
     {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        return 0;
     }
 
+    HWND hwnd = NULL;
+    MSG msg;
+    if (InitializeWindow(&hwnd, hInstance,hPrevInstance,lpCmdLine, nCmdShow))
+    {
+        // Message loop
+       
+        while (GetMessage(&msg, NULL, 0, 0))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        DestroyWindow(hwnd);
+        
+    }
+    CoUninitialize();
 	
     Gdiplus::GdiplusShutdown(gdiplusToken);
     return (int)msg.wParam;
+    
+    // Store instance handle in our global variable
+ 
+
+    // Main message loop:
+    
+
+	
+   
 }
 
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE:  Processes messages for the main window.
-//
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     PAINTSTRUCT ps;
@@ -260,22 +538,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
-    case WM_PAINT:
-        hdc = BeginPaint(hWnd, &ps);
-        OnPaint(hdc);
-        // Here your application is laid out.
-        // For this introduction, we just print out "Hello, Windows desktop!"
-        // in the top left corner.
-        TextOut(hdc,
-            5, 5,
-            greeting, _tcslen(greeting));
-        // End application-specific layout section.
-       
-
-
+    
+      	//TODO: Painting here
+        HANDLE_MSG(hWnd, WM_CLOSE, OnClose);
+        HANDLE_MSG(hWnd, WM_PAINT, OnPaint);
+        
     	
-        EndPaint(hWnd, &ps);
-        break;
+        
+        
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -283,15 +553,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
         break;
     }
-    // TODO: TEST
-   
-    // TODO: End TEST
+    
     return 0;
 }
 
 
+void ShowErrorMessage(PCWSTR format, HRESULT hrErr)
+{
+    HRESULT hr = S_OK;
+    WCHAR msg[MAX_PATH];
 
-    
+    hr = StringCbPrintf(msg, sizeof(msg), L"%s (hr=0x%X)", format, hrErr);
 
-
-	
+    if (SUCCEEDED(hr))
+    {
+        MessageBox(NULL, msg, L"Error", MB_ICONERROR);
+    }
+}
