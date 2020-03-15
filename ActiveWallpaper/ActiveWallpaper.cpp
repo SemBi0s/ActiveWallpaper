@@ -4,12 +4,11 @@
 #include "framework.h"
 #include "ActiveWallpaper.h"
 
-#include <dshow.h>
 #include <windows.h>
+#include <dshow.h>
 #include <cstdlib>
-//#include <string.h>
 #include <tchar.h>
-
+#include <Gdiplus.h>
 // Global variables
 
 // The main window class name.
@@ -23,6 +22,47 @@ HINSTANCE hInst;
 // Forward declarations of functions included in this code module:
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
+//fonctions here
+void OnPaint(HDC hdc)
+{
+	Gdiplus::Graphics graphics(hdc);
+	Gdiplus::Pen      pen(Gdiplus::Color(255, 0, 0, 255));
+    graphics.DrawLine(&pen, 0, 0, 200, 100);
+}
+
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+    HWND p = FindWindowEx(hwnd, NULL, L"SHELLDLL_DefView", NULL);
+    HWND* ret = (HWND*)lParam;
+
+    if (p)
+    {
+        // Gets the WorkerW Window after the current one.
+        *ret = FindWindowEx(NULL, hwnd, L"WorkerW", NULL);
+    }
+    return true;
+}
+
+HWND get_wallpaper_window()
+{
+    // Fetch the Progman window
+    HWND progman = FindWindow(L"ProgMan", NULL);
+    // Send 0x052C to Progman. This message directs Progman to spawn a 
+    // WorkerW behind the desktop icons. If it is already there, nothing 
+    // happens.
+    SendMessageTimeout(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, nullptr);
+    // We enumerate all Windows, until we find one, that has the SHELLDLL_DefView 
+    // as a child. 
+    // If we found that window, we take its next sibling and assign it to workerw.
+    HWND wallpaper_hwnd = nullptr;
+    EnumWindows(EnumWindowsProc, (LPARAM)&wallpaper_hwnd);
+    // Return the handle you're looking for.
+    return wallpaper_hwnd;
+}
+
+
+
+
 int CALLBACK WinMain(
     _In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -30,6 +70,10 @@ int CALLBACK WinMain(
     _In_ int       nCmdShow
 )
 {
+    Gdiplus::GdiplusStartupInput gdiplusstartupinput;
+    ULONG_PTR gdiplusToken;
+    Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusstartupinput, nullptr);
+	
     WNDCLASSEX wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
@@ -57,7 +101,7 @@ int CALLBACK WinMain(
 
     // Store instance handle in our global variable
     hInst = hInstance;
-
+    /*
     // TODO: CODE HERE
 
     IGraphBuilder* pGraph = NULL;
@@ -85,7 +129,7 @@ int CALLBACK WinMain(
     hr = pGraph->QueryInterface(IID_IMediaEvent, (void**)&pEvent);
 
     // Build the graph. IMPORTANT: Change this string to a file on your system.
-    hr = pGraph->RenderFile(L"C://Users/Olivier/Downloads/sample.avi", NULL);
+    hr = pGraph->RenderFile(L"C://Users/Olivier/Downloads/sample.mkv", NULL);
     if (SUCCEEDED(hr))
     {
         // Run the graph.
@@ -104,14 +148,17 @@ int CALLBACK WinMain(
     pControl->Release();
     pEvent->Release();
     pGraph->Release();
-    CoUninitialize();
-
-
+    CoUninitialize();*/
 
 
    
 
 
+
+
+
+
+	
 
     int x = GetSystemMetrics(SM_CXSCREEN);
     int y = GetSystemMetrics(SM_CYSCREEN);
@@ -125,7 +172,9 @@ int CALLBACK WinMain(
     // NULL: this application does not have a menu bar
     // hInstance: the first parameter from WinMain
     // NULL: not used in this application
-    HWND hWnd = CreateWindow(
+
+    HWND hWnd = get_wallpaper_window();
+	/*HWND hWnd = CreateWindow(
         szWindowClass,
         szTitle,
         WS_POPUPWINDOW,
@@ -147,6 +196,11 @@ int CALLBACK WinMain(
         return 1;
     }
 
+
+    */
+	//
+
+	
     // The parameters to ShowWindow explained:
     // hWnd: the value returned from CreateWindow
     // nCmdShow: the fourth parameter from WinMain
@@ -162,6 +216,8 @@ int CALLBACK WinMain(
         DispatchMessage(&msg);
     }
 
+	
+    Gdiplus::GdiplusShutdown(gdiplusToken);
     return (int)msg.wParam;
 }
 
@@ -181,7 +237,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_PAINT:
         hdc = BeginPaint(hWnd, &ps);
-
+        OnPaint(hdc);
         // Here your application is laid out.
         // For this introduction, we just print out "Hello, Windows desktop!"
         // in the top left corner.
@@ -189,7 +245,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             5, 5,
             greeting, _tcslen(greeting));
         // End application-specific layout section.
+       
 
+
+    	
         EndPaint(hWnd, &ps);
         break;
     case WM_DESTROY:
@@ -199,8 +258,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
         break;
     }
-
+    // TODO: TEST
+   
+    // TODO: End TEST
     return 0;
 }
 
 
+
+    
+
+
+	
