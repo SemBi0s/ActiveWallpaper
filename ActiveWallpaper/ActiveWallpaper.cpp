@@ -4,7 +4,10 @@
 #include "framework.h"
 #include "ActiveWallpaper.h"
 
+
+
 #include <windows.h>
+#include <vector>
 #include <dshow.h>
 #include <cstdlib>
 #include <tchar.h>
@@ -23,11 +26,35 @@ HINSTANCE hInst;
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 //fonctions here
+
+
 void OnPaint(HDC hdc)
 {
 	Gdiplus::Graphics graphics(hdc);
 	Gdiplus::Pen      pen(Gdiplus::Color(255, 0, 0, 255));
-    graphics.DrawLine(&pen, 0, 0, 200, 100);
+    Gdiplus::Image myImage(L"C://Users/Olivier/Downloads/sample.gif");
+   /* UINT count = myImage.GetFrameDimensionsCount();
+    GUID** m_DimensionID= new GUID*[count];
+	
+    myImage.GetFrameDimensionsList(*m_DimensionID, count);*/
+	
+	
+for (int i =0; i <= GetSystemMetrics(SM_CXSCREEN);i++)
+	{
+        for (int u = 0; u <= GetSystemMetrics(SM_CYSCREEN); u++)
+            graphics.DrawImage(&myImage, i, u);
+
+	}
+    
+	
+	
+
+/*	for (int i = 0; i < count; i++)
+	{
+    delete[] m_DimensionID[i];
+	}
+    delete[] m_DimensionID;
+   */
 }
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
@@ -45,6 +72,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 
 HWND get_wallpaper_window()
 {
+    
     // Fetch the Progman window
     HWND progman = FindWindow(L"ProgMan", NULL);
     // Send 0x052C to Progman. This message directs Progman to spawn a 
@@ -54,7 +82,8 @@ HWND get_wallpaper_window()
     // We enumerate all Windows, until we find one, that has the SHELLDLL_DefView 
     // as a child. 
     // If we found that window, we take its next sibling and assign it to workerw.
-    HWND wallpaper_hwnd = nullptr;
+
+	HWND wallpaper_hwnd = nullptr;
     EnumWindows(EnumWindowsProc, (LPARAM)&wallpaper_hwnd);
     // Return the handle you're looking for.
     return wallpaper_hwnd;
@@ -173,14 +202,15 @@ int CALLBACK WinMain(
     // hInstance: the first parameter from WinMain
     // NULL: not used in this application
 
-    HWND hWnd = get_wallpaper_window();
-	/*HWND hWnd = CreateWindow(
+   // HWND hWnd = get_wallpaper_window();
+	
+	HWND hWnd = CreateWindow(
         szWindowClass,
         szTitle,
-        WS_POPUPWINDOW,
+        WS_CHILD,
         CW_USEDEFAULT, CW_USEDEFAULT,
         x, y,
-        NULL,
+        get_wallpaper_window(),
         NULL,
         hInstance,
         NULL
@@ -197,7 +227,7 @@ int CALLBACK WinMain(
     }
 
 
-    */
+    
 	//
 
 	
