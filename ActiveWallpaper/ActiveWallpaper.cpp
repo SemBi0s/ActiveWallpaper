@@ -5,12 +5,13 @@
 #include "framework.h"
 #include "ActiveWallpaper.h"
 #include "player.h"
-
+#include "PlayerSeeking.h"
 
 
 
 #include <windows.h>
 #include <mfplay.h>
+#include <mfreadwrite.h>
 #include <mferror.h>
 #include <vector>
 #include <dshow.h>
@@ -94,6 +95,10 @@ const WCHAR WINDOW_NAME[] = L"MFPlay Sample Application";
 //
 //-------------------------------------------------------------------
 
+
+PlayerSeeking player_seeking = PlayerSeeking();
+
+
 #include <Shlwapi.h>
 
 class MediaPlayerCallback : public IMFPMediaPlayerCallback
@@ -140,8 +145,9 @@ public:
 IMFPMediaPlayer* g_pPlayer = NULL;      // The MFPlay player object.
 MediaPlayerCallback* g_pPlayerCB = NULL;    // Application callback object.
 
-BOOL                    g_bHasVideo = FALSE;
-
+BOOL g_bHasVideo = FALSE;
+PROPVARIANT* duration = NULL;
+PWSTR pwszFilePath = NULL;
 /////////////////////////////////////////////////////////////////////
 
 INT WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, INT)
@@ -186,10 +192,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
         HANDLE_MSG(hwnd, WM_CLOSE, OnClose);
-        HANDLE_MSG(hwnd, WM_KEYDOWN, OnKeyDown);
+       
         HANDLE_MSG(hwnd, WM_PAINT, OnPaint);
-        HANDLE_MSG(hwnd, WM_COMMAND, OnCommand);
-        HANDLE_MSG(hwnd, WM_SIZE, OnSize);
+       
 
     case WM_ERASEBKGND:
         return 1;
@@ -208,8 +213,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 BOOL InitializeWindow(HWND* pHwnd)
 {
-    const wchar_t CLASS_NAME[] = L"MFPlay Window Class";
-    const wchar_t WINDOW_NAME[] = L"MFPlay Sample Application";
+    const wchar_t CLASS_NAME[] = L"WallpaperDisplayer";
+    const wchar_t WINDOW_NAME[] = L"";
 
     WNDCLASS wc = { 0 };
 
@@ -233,7 +238,7 @@ BOOL InitializeWindow(HWND* pHwnd)
 
     // TODO: CODE HERE
 
-
+    SetProcessDPIAware();
 
     int x = GetSystemMetrics(SM_CXSCREEN);
     int y = GetSystemMetrics(SM_CYSCREEN);
@@ -248,7 +253,7 @@ BOOL InitializeWindow(HWND* pHwnd)
     // hInstance: the first parameter from WinMain
     // NULL: not used in this application
 
-   // HWND hWnd = get_wallpaper_window();
+   
 
     HWND hWnd = CreateWindow(
         CLASS_NAME,
@@ -261,7 +266,7 @@ BOOL InitializeWindow(HWND* pHwnd)
         GetModuleHandle(NULL),
         NULL
     );
-
+    
     if (!hWnd)
     {
         MessageBox(NULL,
@@ -320,30 +325,47 @@ void OnClose(HWND /*hwnd*/)
 // Handles the WM_PAINT message.
 //-------------------------------------------------------------------
 
+int m = 0;
+
 void OnPaint(HWND hwnd)
 {
     PAINTSTRUCT ps;
     HDC hdc = 0;
 
+    MFP_MEDIAPLAYER_STATE state = MFP_MEDIAPLAYER_STATE_EMPTY;
+   
+	
     hdc = BeginPaint(hwnd, &ps);
    
+    
+    
+    
     if (g_pPlayer && g_bHasVideo)
     {
-        // Playback has started and there is video. 
-
-        // Do not draw the window background, because the video 
+        if (m == 1)
+        {
+            PlayMediaFile(hwnd, pwszFilePath);
+            m = -1;
+        }
         // frame fills the entire client area.
-
+        m++;
+    	
         g_pPlayer->UpdateVideo();
+        
     }
     else
     {
         // There is no video stream, or playback has not started.
         // Paint the entire client area.
+        
         OnFileOpen(hwnd);
+       
         FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
     }
+   
 
+   
+	
     EndPaint(hwnd, &ps);
 }
 
@@ -444,8 +466,8 @@ void OnFileOpen(HWND hwnd)
 
     IFileOpenDialog* pFileOpen = NULL;
     IShellItem* pItem = NULL;
-
-    PWSTR pwszFilePath = NULL;
+    
+    
 
     // Create the FileOpenDialog object.
     hr = CoCreateInstance(
@@ -484,12 +506,13 @@ void OnFileOpen(HWND hwnd)
     hr = pItem->GetDisplayName(SIGDN_URL, &pwszFilePath);
 
     if (FAILED(hr)) { goto done; }
-
+    
 
     // Open the media file.
     hr = PlayMediaFile(hwnd, pwszFilePath);
 
     if (FAILED(hr)) { goto done; }
+    
 
 done:
     if (FAILED(hr))
@@ -497,7 +520,7 @@ done:
         ShowErrorMessage(L"Could not open file.", hr);
     }
 
-    CoTaskMemFree(pwszFilePath);
+   
 
     if (pItem)
     {
@@ -507,6 +530,8 @@ done:
     {
         pFileOpen->Release();
     }
+   
+   
 }
 
 
@@ -539,6 +564,7 @@ HRESULT PlayMediaFile(HWND hwnd, const WCHAR* sURL)
             hwnd,           // Video window
             &g_pPlayer
         );
+        
 
         if (FAILED(hr)) { goto done; }
     }
