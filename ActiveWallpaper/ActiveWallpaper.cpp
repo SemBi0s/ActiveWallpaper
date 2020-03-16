@@ -326,7 +326,7 @@ void OnPaint(HWND hwnd)
     HDC hdc = 0;
 
     hdc = BeginPaint(hwnd, &ps);
-    OnFileOpen(hwnd);
+   
     if (g_pPlayer && g_bHasVideo)
     {
         // Playback has started and there is video. 
@@ -340,7 +340,7 @@ void OnPaint(HWND hwnd)
     {
         // There is no video stream, or playback has not started.
         // Paint the entire client area.
-
+        OnFileOpen(hwnd);
         FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
     }
 
