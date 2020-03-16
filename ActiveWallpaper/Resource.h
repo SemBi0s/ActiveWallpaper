@@ -15,6 +15,9 @@
 #define IDC_MYICON				2
 #ifndef IDC_STATIC
 #define IDC_STATIC				-1
+#define ID_FILE_EXIT                    40002
+#define ID_FILE_OPEN                    0xE101
+#define IDR_MENU1                       101
 #endif
 // Valeurs par défaut suivantes des nouveaux objets
 //

@@ -1,4 +1,2 @@
 ﻿  ActiveWallpaper.cpp
-C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper.cpp(536,9): warning C4101: 'hdc' : variable locale non référencée
-C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper.cpp(535,17): warning C4101: 'ps' : variable locale non référencée
   ActiveWallpaper.vcxproj -> C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\Debug\ActiveWallpaper.exe
