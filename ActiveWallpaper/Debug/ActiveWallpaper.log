@@ -1,7 +1,2 @@
-﻿  ActiveWallpaper.cpp
-  Seeker.cpp
-  VideoPlayer.cpp
-  Génération de code en cours...
-msvcprtd.lib(nothrow.obj) : error LNK2038: discordance dÚtectÚe pour 'RuntimeLibrary'á: la valeur 'MDd_DynamicDebug' ne correspond pas Ó la valeur 'MTd_StaticDebug' in ActiveWallpaper.obj
-LINK : warning LNK4098: conflit entre la bibliothÞque par dÚfaut 'LIBCMTD' et les autres bibliothÞquesá; utilisez /NODEFAULTLIB:library
-C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\Debug\ActiveWallpaper.exe : fatal error LNK1319: 1 discordances dÚtectÚes
+﻿LINK : warning LNK4098: conflit entre la bibliothèque par défaut 'LIBCMTD' et les autres bibliothèques ; utilisez /NODEFAULTLIB:library
+  ActiveWallpaper.vcxproj -> C:\Users\Olivier\Documents\GitHub\ActiveWallpaper\ActiveWallpaper\ActiveWallpaper\Debug\ActiveWallpaper.exe
